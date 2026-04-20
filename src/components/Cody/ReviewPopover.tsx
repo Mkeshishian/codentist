@@ -14,6 +14,12 @@ export default function ReviewPopover({ onAccept, onSkip, onSkipAll, style }: Pr
       style={style}
       className="pointer-events-auto absolute z-30 w-[280px] rounded-2xl border border-brand-200 bg-white p-3 shadow-pop"
     >
+      {/* Upward-pointing arrow connecting popover to the proposed card above. */}
+      <span
+        aria-hidden
+        className="absolute left-1/2 -top-[7px] h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] border-l border-t border-brand-200 bg-white"
+      />
+
       <div className="mb-2 flex items-center gap-2">
         <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white">
           <Icon.Sparkle width={12} height={12} />

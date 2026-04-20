@@ -43,15 +43,15 @@ export const timeSlots = [
   '11:00 AM',
   '11:30 AM',
   '12:00 PM',
+  '12:30 PM',
 ]
 
 // Blocked / unavailable slot under Dr. Rodney (diagonal stripes area).
 export const blockedSlots: Array<{ providerId: string; start: string; end: string }> = [
-  { providerId: 'rodney', start: '8:00 AM', end: '9:30 AM' },
+  { providerId: 'rodney', start: '8:00 AM', end: '9:00 AM' },
 ]
 
 const baseAppointment = {
-  patient: 'Emily Richardson',
   treatment: 'Root Canal Treatment',
   operatory: 'Operatory 2',
   tags: ['pay-today', 'child'] as Array<'pay-today' | 'child'>,
@@ -59,62 +59,83 @@ const baseAppointment = {
 }
 
 export const appointments: Appointment[] = [
+  // ── Dr. Rodney ─────────────────────────────────────────────
   {
-    id: 'a1',
-    providerId: 'jennifer',
-    start: '8:00 AM',
-    end: '9:30 AM',
-    ...baseAppointment,
-  },
-  {
-    id: 'a2',
-    providerId: 'jessica',
-    start: '8:00 AM',
-    end: '9:30 AM',
-    ...baseAppointment,
-    status: 'confirmed',
-  },
-  {
-    id: 'a3',
-    providerId: 'jennifer',
-    start: '9:30 AM',
-    end: '11:00 AM',
-    ...baseAppointment,
-  },
-  {
-    id: 'a4',
+    id: 'a-rodney-1',
     providerId: 'rodney',
+    patient: 'Marcus Chen',
     start: '9:30 AM',
-    end: '11:00 AM',
+    end: '10:30 AM',
     ...baseAppointment,
   },
   {
-    id: 'a5',
-    providerId: 'jennifer',
-    start: '10:00 AM',
-    end: '11:30 AM',
-    ...baseAppointment,
-  },
-  {
-    id: 'a6',
+    id: 'a-rodney-2',
     providerId: 'rodney',
+    patient: 'Olivia Park',
     start: '11:00 AM',
     end: '12:00 PM',
     ...baseAppointment,
+    status: 'confirmed',
   },
+
+  // ── Dr. Jennifer ───────────────────────────────────────────
   {
-    id: 'a7',
-    providerId: 'jessica',
-    start: '10:00 AM',
-    end: '11:30 AM',
+    id: 'a-jennifer-1',
+    providerId: 'jennifer',
+    patient: 'Emily Richardson',
+    start: '8:00 AM',
+    end: '9:00 AM',
     ...baseAppointment,
   },
   {
-    id: 'a8',
-    providerId: 'jessica',
+    id: 'a-jennifer-2',
+    providerId: 'jennifer',
+    patient: 'David Nguyen',
+    start: '9:30 AM',
+    end: '10:30 AM',
+    ...baseAppointment,
+    treatment: 'Crown Placement',
+  },
+  {
+    id: 'a-jennifer-3',
+    providerId: 'jennifer',
+    patient: 'Sophia Martinez',
     start: '11:30 AM',
     end: '12:30 PM',
     ...baseAppointment,
+    treatment: 'Cleaning',
+    tags: [],
+  },
+
+  // ── Dr. Jessica ────────────────────────────────────────────
+  {
+    id: 'a-jessica-1',
+    providerId: 'jessica',
+    patient: 'James Whitfield',
+    start: '8:30 AM',
+    end: '9:30 AM',
+    ...baseAppointment,
+    status: 'confirmed',
+    treatment: 'Filling',
+    tags: ['pay-today'],
+  },
+  {
+    id: 'a-jessica-2',
+    providerId: 'jessica',
+    patient: 'Aisha Patel',
+    start: '10:00 AM',
+    end: '11:00 AM',
+    ...baseAppointment,
+  },
+  {
+    id: 'a-jessica-3',
+    providerId: 'jessica',
+    patient: 'Liam O\'Connor',
+    start: '11:30 AM',
+    end: '12:30 PM',
+    ...baseAppointment,
+    treatment: 'Consultation',
+    tags: [],
   },
 ]
 

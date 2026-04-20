@@ -1,3 +1,4 @@
+import type { ComponentType, SVGProps } from 'react'
 import { Icon } from '../icons'
 
 export type CodyState = 'idle' | 'listening' | 'processing' | 'review'
@@ -7,6 +8,7 @@ type Props = {
   onScheduleAppointment: () => void
   onEndTask: () => void
   onGenerate: () => void
+  onClose?: () => void
 }
 
 function CodyOrb({ pulse = false }: { pulse?: boolean }) {
@@ -50,23 +52,35 @@ function PresetAction({
   label,
   onClick,
   primary,
+  icon: IconComp,
 }: {
   label: string
   onClick?: () => void
   primary?: boolean
+  icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>
 }) {
   return (
     <button
       onClick={onClick}
       className={[
-        'group flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors',
+        'group flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-colors',
         primary
           ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
           : 'border-ink-100 bg-white text-ink-700 hover:border-ink-200 hover:bg-ink-50',
       ].join(' ')}
     >
-      <span>{label}</span>
-      <Icon.ChevronRight width={14} height={14} className="opacity-60 group-hover:opacity-100" />
+      <span className="flex min-w-0 items-center gap-3">
+        <span
+          className={[
+            'grid h-8 w-8 shrink-0 place-items-center rounded-lg',
+            primary ? 'bg-white text-brand-600' : 'bg-ink-50 text-ink-600',
+          ].join(' ')}
+        >
+          <IconComp width={16} height={16} />
+        </span>
+        <span className="truncate">{label}</span>
+      </span>
+      <Icon.ChevronRight width={14} height={14} className="shrink-0 opacity-60 group-hover:opacity-100" />
     </button>
   )
 }
@@ -94,6 +108,7 @@ export default function CodyPanel({
   onScheduleAppointment,
   onEndTask,
   onGenerate,
+  onClose,
 }: Props) {
   const isBusy = state === 'listening' || state === 'processing' || state === 'review'
 
@@ -114,7 +129,12 @@ export default function CodyPanel({
           <button className="grid h-7 w-7 place-items-center rounded-md hover:bg-ink-50 hover:text-ink-700">
             <Icon.Notes width={14} height={14} />
           </button>
-          <button className="grid h-7 w-7 place-items-center rounded-md hover:bg-ink-50 hover:text-ink-700">
+          <button
+            onClick={onClose}
+            aria-label="Close Cody"
+            title="Close Cody"
+            className="grid h-7 w-7 place-items-center rounded-md hover:bg-ink-50 hover:text-ink-700"
+          >
             <Icon.Close width={14} height={14} />
           </button>
         </div>
@@ -146,9 +166,14 @@ export default function CodyPanel({
             </p>
           </div>
           <div className="mt-3 space-y-2">
-            <PresetAction label="Schedule appointment" primary onClick={onScheduleAppointment} />
-            <PresetAction label="Add schedule notes" />
-            <PresetAction label="Send message to patients" />
+            <PresetAction
+              label="Schedule appointment"
+              primary
+              icon={Icon.Calendar}
+              onClick={onScheduleAppointment}
+            />
+            <PresetAction label="Add schedule notes" icon={Icon.Notes} />
+            <PresetAction label="Send message to patients" icon={Icon.Chat} />
           </div>
           <VoiceChatToggle />
         </>

@@ -15,7 +15,7 @@ export default function CalendarPage() {
       <div className="flex h-full flex-col gap-4 p-5">
         <CalendarToolbar view={view} setView={setView} mode={mode} setMode={setMode} />
         <div className="flex min-h-0 flex-1">
-          <CalendarGrid />
+          <CalendarGrid mode={mode} />
         </div>
       </div>
     </Layout>

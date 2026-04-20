@@ -75,11 +75,11 @@ export default function AppointmentCard({ apt, providerName, color, proposed, cl
     <div
       style={style}
       className={[
-        'group relative overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-150',
+        'group overflow-hidden rounded-lg border shadow-sm transition-all duration-150',
         'ring-1 ring-transparent hover:-translate-y-[1px] hover:shadow-md',
         proposed
-          ? 'border-dashed border-brand-400 ring-1 ring-brand-200'
-          : c.border,
+          ? 'border-dashed border-brand-400 bg-brand-50/60 ring-1 ring-brand-200'
+          : `${c.border} ${c.body}`,
         c.hover,
         className,
       ].join(' ')}
@@ -92,7 +92,7 @@ export default function AppointmentCard({ apt, providerName, color, proposed, cl
         <span className="truncate">{providerName}</span>
         <Icon.Dots width={12} height={12} className="opacity-80" />
       </div>
-      <div className={`px-2.5 py-2 ${proposed ? 'bg-brand-50/60' : c.body}`}>
+      <div className="px-2.5 py-2">
         <p className="truncate text-[12px] font-semibold text-ink-900">{apt.patient}</p>
         <p className="truncate text-[11px] text-ink-600">{apt.treatment}</p>
         <p className="mt-0.5 truncate text-[10px] text-ink-500">{rangeText}</p>

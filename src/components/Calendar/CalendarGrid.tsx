@@ -1,7 +1,8 @@
 import type { Appointment, Provider } from '../../data/calendar'
-import { appointments, blockedSlots, providers, timeSlots, pendingColumn } from '../../data/calendar'
+import { appointments, blockedSlots, providers, timeSlots } from '../../data/calendar'
 import { Icon } from '../icons'
 import AppointmentCard from './AppointmentCard'
+import type { ViewMode } from './CalendarToolbar'
 
 type Props = {
   /** Extra appointments (e.g. AI-proposed preview or accepted slot). */
@@ -10,6 +11,8 @@ type Props = {
   proposedAppointmentId?: string
   /** Render popover markup (children positioned absolutely inside the grid wrapper). */
   overlay?: React.ReactNode
+  /** Provider View shows doctor labels; Operatory View relabels columns as Op 1…N. */
+  mode?: ViewMode
 }
 
 /** Minutes since 8:00 AM (start of our day). */
@@ -41,12 +44,80 @@ function providerColor(p: Provider) {
   return p.color
 }
 
+/**
+ * Lays out appointments into sub-columns so overlapping cards render side-by-side
+ * instead of on top of each other. Returns each appointment with its column index
+ * and the total number of columns within its overlap cluster.
+ */
+function layoutAppointments(
+  items: Appointment[],
+): Array<{ apt: Appointment; col: number; totalCols: number }> {
+  if (items.length === 0) return []
+
+  const sorted = [...items].sort((a, b) => {
+    const sA = timeToMinutes(a.start)
+    const sB = timeToMinutes(b.start)
+    if (sA !== sB) return sA - sB
+    return timeToMinutes(b.end) - timeToMinutes(a.end)
+  })
+
+  const result: Array<{ apt: Appointment; col: number; totalCols: number }> = []
+  let cluster: Appointment[] = []
+  let clusterEnd = -1
+
+  const flush = () => {
+    if (cluster.length === 0) return
+    const cols: Appointment[][] = []
+    const colByApt = new Map<string, number>()
+    for (const a of cluster) {
+      const s = timeToMinutes(a.start)
+      let placed = false
+      for (let c = 0; c < cols.length; c++) {
+        const last = cols[c][cols[c].length - 1]
+        if (timeToMinutes(last.end) <= s) {
+          cols[c].push(a)
+          colByApt.set(a.id, c)
+          placed = true
+          break
+        }
+      }
+      if (!placed) {
+        cols.push([a])
+        colByApt.set(a.id, cols.length - 1)
+      }
+    }
+    const total = cols.length
+    for (const a of cluster) {
+      result.push({ apt: a, col: colByApt.get(a.id)!, totalCols: total })
+    }
+    cluster = []
+    clusterEnd = -1
+  }
+
+  for (const apt of sorted) {
+    const s = timeToMinutes(apt.start)
+    if (cluster.length > 0 && s < clusterEnd) {
+      cluster.push(apt)
+      clusterEnd = Math.max(clusterEnd, timeToMinutes(apt.end))
+    } else {
+      flush()
+      cluster.push(apt)
+      clusterEnd = timeToMinutes(apt.end)
+    }
+  }
+  flush()
+
+  return result
+}
+
 function ColumnHeader({
   provider,
-  pending,
+  operatoryIndex,
+  mode = 'Provider View',
 }: {
   provider?: Provider
-  pending?: boolean
+  operatoryIndex?: number
+  mode?: ViewMode
 }) {
   const colorToBg: Record<string, string> = {
     green: 'bg-emerald-500',
@@ -56,20 +127,31 @@ function ColumnHeader({
     blue: 'bg-brand-500',
     pink: 'bg-rose-500',
   }
+  const isOperatoryView = mode === 'Operatory View'
   return (
     <div className="sticky top-0 z-20 flex h-11 items-center justify-between gap-2 border-b border-ink-100 bg-white px-3 text-xs">
       <div className="flex items-center gap-2">
         {provider ? (
-          <>
-            <span
-              className={`grid h-6 w-6 place-items-center rounded-full text-[10px] font-semibold text-white ${colorToBg[provider.color]}`}
-            >
-              {provider.initials}
-            </span>
-            <span className="font-semibold text-ink-800">{provider.name}</span>
-          </>
-        ) : pending ? (
-          <span className="font-semibold text-ink-700">Pending</span>
+          isOperatoryView ? (
+            <>
+              <span className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-[10px] font-semibold text-ink-700">
+                {operatoryIndex !== undefined ? operatoryIndex + 1 : ''}
+              </span>
+              <span className="font-semibold text-ink-800">
+                Operatory {operatoryIndex !== undefined ? operatoryIndex + 1 : ''}
+              </span>
+              <span className="text-[10px] font-medium text-ink-400">· {provider.name}</span>
+            </>
+          ) : (
+            <>
+              <span
+                className={`grid h-6 w-6 place-items-center rounded-full text-[10px] font-semibold text-white ${colorToBg[provider.color]}`}
+              >
+                {provider.initials}
+              </span>
+              <span className="font-semibold text-ink-800">{provider.name}</span>
+            </>
+          )
         ) : null}
       </div>
       <div className="flex items-center gap-1 text-ink-400">
@@ -85,9 +167,9 @@ function TimeColumn() {
   return (
     <div className="relative w-20 shrink-0 border-r border-ink-100 bg-white">
       <div className="sticky top-0 z-20 h-11 border-b border-ink-100 bg-white" />
-      {timeSlots.map((t, i) => (
+      {timeSlots.map((t) => (
         <div key={t} className="relative" style={{ height: slotHeightPx }}>
-          <span className="absolute -top-2 right-2 text-[10px] font-medium text-ink-400">
+          <span className="absolute right-2 top-1 text-[10px] font-medium text-ink-400">
             {t}
           </span>
         </div>
@@ -107,16 +189,20 @@ function ProviderColumn({
   provider,
   items,
   proposedId,
+  operatoryIndex,
+  mode,
 }: {
   provider: Provider
   items: Appointment[]
   proposedId?: string
+  operatoryIndex: number
+  mode: ViewMode
 }) {
   const blocked = blockedSlots.filter((b) => b.providerId === provider.id)
 
   return (
     <div className="relative min-w-0 flex-1 border-r border-ink-100">
-      <ColumnHeader provider={provider} />
+      <ColumnHeader provider={provider} operatoryIndex={operatoryIndex} mode={mode} />
       <div className="relative" style={{ height: timeSlots.length * slotHeightPx }}>
         {/* horizontal lines */}
         {timeSlots.map((_, i) => (
@@ -145,55 +231,56 @@ function ProviderColumn({
           />
         ))}
 
-        {/* appointments */}
-        {items.map((apt) => (
-          <AppointmentCard
-            key={apt.id}
-            apt={apt}
-            providerName={provider.name}
-            color={providerColor(provider)}
-            proposed={proposedId === apt.id}
-            className="absolute left-1.5 right-1.5"
-            style={{
-              top: timeOffsetPx(apt.start) + 2,
-              height: durationPx(apt.start, apt.end) - 4,
-            }}
-          />
-        ))}
+        {/* appointments — laid out side-by-side when they overlap */}
+        {layoutAppointments(items).map(({ apt, col, totalCols }) => {
+          const widthPct = 100 / totalCols
+          const leftPct = col * widthPct
+          return (
+            <AppointmentCard
+              key={apt.id}
+              apt={apt}
+              providerName={provider.name}
+              color={providerColor(provider)}
+              proposed={proposedId === apt.id}
+              className="absolute"
+              style={{
+                top: timeOffsetPx(apt.start) + 2,
+                height: durationPx(apt.start, apt.end) - 4,
+                left: `calc(${leftPct}% + 4px)`,
+                width: `calc(${widthPct}% - 8px)`,
+              }}
+            />
+          )
+        })}
       </div>
     </div>
   )
 }
 
-function PendingColumn() {
-  return (
-    <div className="relative w-20 shrink-0 bg-ink-50/40">
-      <ColumnHeader pending />
-      <div className="relative" style={{ height: timeSlots.length * slotHeightPx }} />
-    </div>
-  )
-}
-
-export default function CalendarGrid({ extraAppointments = [], proposedAppointmentId, overlay }: Props) {
+export default function CalendarGrid({
+  extraAppointments = [],
+  proposedAppointmentId,
+  overlay,
+  mode = 'Provider View',
+}: Props) {
   const allAppointments = [...appointments, ...extraAppointments]
 
   return (
     <div className="relative flex flex-1 overflow-hidden rounded-xl border border-ink-100 bg-white shadow-card">
-      <div className="relative flex flex-1 overflow-auto">
+      <div className="relative flex flex-1 overflow-y-auto overflow-x-hidden">
         <TimeColumn />
-        {providers.map((p) => (
+        {providers.map((p, idx) => (
           <ProviderColumn
             key={p.id}
             provider={p}
             items={allAppointments.filter((a) => a.providerId === p.id)}
             proposedId={proposedAppointmentId}
+            operatoryIndex={idx}
+            mode={mode}
           />
         ))}
-        <PendingColumn />
         {overlay}
       </div>
-      {/* tiny footer to hold pendingColumn reference for ts noUnusedLocals */}
-      <span className="sr-only">{pendingColumn.name}</span>
     </div>
   )
 }

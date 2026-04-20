@@ -1,18 +1,16 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { Icon } from './icons'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/calendar', label: 'Calendar', badge: 2 },
+  { to: '/ai-schedule', label: 'AI Schedule' },
   { to: '/patients', label: 'Patient list' },
   { to: '/report', label: 'Report' },
   { to: '/communication', label: 'Communication' },
 ]
 
 export default function TopNav() {
-  const { pathname } = useLocation()
-  const isAi = pathname.startsWith('/ai-schedule')
-
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-6 border-b border-ink-100 bg-white px-6">
       <div className="flex items-center gap-1.5">
@@ -22,34 +20,30 @@ export default function TopNav() {
       </div>
 
       <nav className="flex items-center gap-1 text-sm">
-        {links.map((l) => {
-          // Treat AI Schedule as part of "Calendar" for the nav highlight
-          const isActive = (l.to === '/calendar' && isAi) || undefined
-          return (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.end}
-              className={({ isActive: active }) =>
-                [
-                  'relative rounded-md px-3 py-1.5 font-medium transition-colors',
-                  active || isActive
-                    ? 'text-brand-600'
-                    : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900',
-                ].join(' ')
-              }
-            >
-              <span className="flex items-center gap-2">
-                {l.label}
-                {l.badge ? (
-                  <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-semibold text-white">
-                    {l.badge}
-                  </span>
-                ) : null}
-              </span>
-            </NavLink>
-          )
-        })}
+        {links.map((l) => (
+          <NavLink
+            key={l.to}
+            to={l.to}
+            end={l.end}
+            className={({ isActive }) =>
+              [
+                'relative rounded-md px-3 py-1.5 font-medium transition-colors',
+                isActive
+                  ? 'text-brand-600'
+                  : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900',
+              ].join(' ')
+            }
+          >
+            <span className="flex items-center gap-2">
+              {l.label}
+              {l.badge ? (
+                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-semibold text-white">
+                  {l.badge}
+                </span>
+              ) : null}
+            </span>
+          </NavLink>
+        ))}
       </nav>
 
       <div className="ml-auto flex flex-1 items-center justify-end gap-4">

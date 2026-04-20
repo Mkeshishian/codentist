@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { Link } from 'react-router-dom'
 import FilterPill from '../FilterPill'
 import { Icon } from '../icons'
 
@@ -89,9 +90,14 @@ export default function CalendarToolbar({ view, setView, mode, setMode }: Props)
             <Icon.Plus width={16} height={16} />
             Add appointment
           </button>
-          <button className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-100">
-            <Icon.Plus width={16} height={16} />
-          </button>
+          <Link
+            to="/ai-schedule"
+            title="Open AI Schedule"
+            aria-label="Open AI Schedule"
+            className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600 transition-colors hover:bg-brand-100"
+          >
+            <Icon.Sparkle width={16} height={16} />
+          </Link>
         </div>
       </div>
 

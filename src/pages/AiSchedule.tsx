@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import CalendarGrid, {
   durationPx,
@@ -13,6 +14,7 @@ import ReviewPopover from '../components/Cody/ReviewPopover'
 import { aiSuggestedAppointment, providers } from '../data/calendar'
 
 export default function AiSchedulePage() {
+  const navigate = useNavigate()
   const [view, setView] = useState<CalendarView>('Today')
   const [mode, setMode] = useState<ViewMode>('Provider View')
   const [cody, setCody] = useState<CodyState>('idle')
@@ -36,20 +38,21 @@ export default function AiSchedulePage() {
     return acceptedAppointments
   }, [cody, acceptedAppointments])
 
-  // Position of the popover next to the proposed card.
-  // Calendar header 44px, time column 80px wide, each provider column flex.
-  // Provider "Lily" is 3rd provider (index 2). Inside grid the time col is 80 and
-  // the proposed card is in Lily column. We position popover using left/top offsets
-  // calculated from provider index.
+  // Position the popover BELOW the proposed Art Vandelay card in Lily's column.
+  // Lily is the 3rd of 4 columns, so positioning to the right would clip the
+  // popover; below the card sits in empty space.
   const lilyIndex = providers.findIndex((p) => p.id === 'lily')
   const availableWidth = 1440 - 56 /* sidebar */ - 340 /* cody */ - 40 /* padding */
-  const providerColWidth = (availableWidth - 80 /* time col */ - 80 /* pending col */) / providers.length
-  const popoverLeft = 80 + lilyIndex * providerColWidth + providerColWidth + 12
+  const providerColWidth = (availableWidth - 80 /* time col */) / providers.length
+  const popoverWidth = 280
+  // Center the popover horizontally under Lily's column (it's slightly wider
+  // than one column, so it extends a touch into the neighbouring columns).
+  const popoverLeft =
+    80 + lilyIndex * providerColWidth + providerColWidth / 2 - popoverWidth / 2
   const popoverTop =
     44 /* header */ +
-    timeOffsetPx(aiSuggestedAppointment.start) +
-    durationPx(aiSuggestedAppointment.start, aiSuggestedAppointment.end) / 2 -
-    90
+    timeOffsetPx(aiSuggestedAppointment.end) +
+    12 /* small gap below the card */
 
   return (
     <Layout flush>
@@ -59,12 +62,14 @@ export default function AiSchedulePage() {
           onScheduleAppointment={goListening}
           onEndTask={goIdle}
           onGenerate={goReview}
+          onClose={() => navigate('/calendar')}
         />
         <div className="flex flex-1 flex-col gap-4 p-5">
           <CalendarToolbar view={view} setView={setView} mode={mode} setMode={setMode} />
           <div className="flex min-h-0 flex-1">
             <CalendarGrid
               extraAppointments={extras}
+              mode={mode}
               proposedAppointmentId={cody === 'review' ? aiSuggestedAppointment.id : undefined}
               overlay={
                 cody === 'review' ? (
